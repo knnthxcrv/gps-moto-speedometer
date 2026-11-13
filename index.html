@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>GPS Speedometer · Big Bike Sound</title>
+    <title>GPS Speedometer · Big Bike Sound + Rev</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -49,7 +49,7 @@
             background: #4caf50; box-shadow: 0 0 10px #4caf50; transition: 0.3s;
         }
         .dot.inactive { background: #f44336; box-shadow: 0 0 10px #f44336; }
-        .controls { display: flex; justify-content: center; gap: 24px; margin-top: 24px; }
+        .controls { display: flex; justify-content: center; gap: 16px; margin-top: 24px; flex-wrap: wrap; }
         button {
             background: #222a35; border: none; border-radius: 50px;
             padding: 14px 32px; font-size: 1rem; font-weight: 600; color: #d3e2ff;
@@ -67,9 +67,34 @@
         }
         .sound-icon { font-size: 1.2rem; }
         .footer-note { text-align: center; color: #4a576b; font-size: 0.7rem; margin-top: 18px; letter-spacing: 0.5px; }
+
+        /* REV button styles */
+        .rev-btn {
+            background: linear-gradient(180deg, #ff7a2f 0%, #d43d00 100%);
+            border: 1px solid #ffb07a;
+            color: #fff3e6;
+            font-size: 1.15rem;
+            padding: 16px 38px;
+            letter-spacing: 2px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+            box-shadow: 0 6px 0 #7a1f00, 0 8px 22px #ff450080;
+        }
+        .rev-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #7a1f00, 0 6px 18px #ff450080;
+        }
+        .rev-btn.revving {
+            animation: revPulse 0.12s ease-in-out infinite alternate;
+        }
+        @keyframes revPulse {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.5); }
+        }
+
         @media (max-width: 420px) {
             .speed-text { font-size: 3.6rem; }
             button { padding: 12px 20px; font-size: 0.9rem; }
+            .rev-btn { padding: 14px 28px; }
         }
     </style>
 </head>
@@ -87,12 +112,13 @@
         <div class="controls">
             <button id="startBtn" title="Start GPS tracking">▶ START</button>
             <button id="stopBtn" disabled title="Stop GPS">⏹ STOP</button>
+            <button id="revBtn" class="rev-btn" title="Blip the throttle">🔊 REV</button>
         </div>
         <div class="sound-indicator" id="soundIndicator">
             <span class="sound-icon">🏍️</span>
             <span id="soundText">Big bike: OFF</span>
         </div>
-        <div class="footer-note">GPS speedometer · realistic V-twin rumble</div>
+        <div class="footer-note">GPS speedometer · realistic V-twin rumble · REV to blip throttle</div>
     </div>
 
     <script>
@@ -105,6 +131,7 @@
         const gpsMessage = document.getElementById('gpsMessage');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
+        const revBtn = document.getElementById('revBtn');
         const soundText = document.getElementById('soundText');
         const SIZE = 800;
         canvas.width = SIZE;
@@ -120,18 +147,22 @@
         let lastPosition = null;
         let lastUpdateTime = 0;
 
+        // REV state
+        let revEnergy = 0;        // 0..1, decays after a rev
+        let isRevving = false;    // true while button held
+
         const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
         // ===== REALISTIC V-TWIN AUDIO ENGINE =====
         let audioCtx = null;
         let masterGain = null;
-        let engineBus = null;       // sums engine layers
-        let noiseSource = null;     // exhaust rasp
+        let engineBus = null;
+        let noiseSource = null;
         let noiseFilter = null;
         let noiseGain = null;
-        let lfo = null;             // amplitude modulator (the "lope")
-        let lfoGain = null;         // depth of lope
-        let lfoGainTarget = null;   // gain node controlled by LFO
+        let lfo = null;
+        let lfoGain = null;
+        let lfoGainTarget = null;
         let oscillators = [];
         let filterNode = null;
         let isAudioReady = false;
@@ -141,7 +172,6 @@
             try {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-                // Master chain: engineBus -> filter -> masterGain -> destination
                 masterGain = audioCtx.createGain();
                 masterGain.gain.value = 0;
                 masterGain.connect(audioCtx.destination);
@@ -156,52 +186,44 @@
                 engineBus.gain.value = 0.9;
                 engineBus.connect(filterNode);
 
-                // ---- LAYER 1: fundamental saw (the "bark") ----
+                // Layer 1: fundamental saw
                 const osc1 = audioCtx.createOscillator();
                 osc1.type = 'sawtooth';
-                osc1.frequency.value = 55; // ~A1, idle of a big twin
+                osc1.frequency.value = 55;
                 const g1 = audioCtx.createGain();
                 g1.gain.value = 0.5;
-                osc1.connect(g1);
-                g1.connect(engineBus);
-                osc1.start();
-                oscillators.push({ osc: osc1, gain: g1, baseFreq: 55, detune: 0 });
+                osc1.connect(g1); g1.connect(engineBus); osc1.start();
+                oscillators.push({ osc: osc1, gain: g1, baseFreq: 55 });
 
-                // ---- LAYER 2: sub-octave sine (the "thump") ----
+                // Layer 2: sub-octave sine
                 const osc2 = audioCtx.createOscillator();
                 osc2.type = 'sine';
                 osc2.frequency.value = 27.5;
                 const g2 = audioCtx.createGain();
                 g2.gain.value = 0.7;
-                osc2.connect(g2);
-                g2.connect(engineBus);
-                osc2.start();
-                oscillators.push({ osc: osc2, gain: g2, baseFreq: 27.5, detune: 0 });
+                osc2.connect(g2); g2.connect(engineBus); osc2.start();
+                oscillators.push({ osc: osc2, gain: g2, baseFreq: 27.5 });
 
-                // ---- LAYER 3: second harmonic saw (the "growl") ----
+                // Layer 3: second harmonic
                 const osc3 = audioCtx.createOscillator();
                 osc3.type = 'sawtooth';
                 osc3.frequency.value = 110;
                 const g3 = audioCtx.createGain();
                 g3.gain.value = 0.18;
-                osc3.connect(g3);
-                g3.connect(engineBus);
-                osc3.start();
-                oscillators.push({ osc: osc3, gain: g3, baseFreq: 110, detune: 0 });
+                osc3.connect(g3); g3.connect(engineBus); osc3.start();
+                oscillators.push({ osc: osc3, gain: g3, baseFreq: 110 });
 
-                // ---- LAYER 4: detuned saw for thickness/beating ----
+                // Layer 4: detuned saw
                 const osc4 = audioCtx.createOscillator();
                 osc4.type = 'sawtooth';
                 osc4.frequency.value = 55;
-                osc4.detune.value = 12; // slightly sharp → beating
+                osc4.detune.value = 12;
                 const g4 = audioCtx.createGain();
                 g4.gain.value = 0.22;
-                osc4.connect(g4);
-                g4.connect(engineBus);
-                osc4.start();
-                oscillators.push({ osc: osc4, gain: g4, baseFreq: 55, detune: 12 });
+                osc4.connect(g4); g4.connect(engineBus); osc4.start();
+                oscillators.push({ osc: osc4, gain: g4, baseFreq: 55 });
 
-                // ---- LAYER 5: exhaust rasp (filtered white noise) ----
+                // Layer 5: exhaust rasp
                 const bufferSize = 2 * audioCtx.sampleRate;
                 const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                 const data = noiseBuffer.getChannelData(0);
@@ -224,25 +246,21 @@
                 noiseGain.connect(engineBus);
                 noiseSource.start();
 
-                // ---- LFO: amplitude modulation (the V-twin "potato-potato" lope) ----
-                // A big twin fires irregularly; we simulate with a slow LFO
-                // that dips the engine bus volume at idle.
+                // LFO for the V-twin lope
                 lfo = audioCtx.createOscillator();
                 lfo.type = 'sine';
-                lfo.frequency.value = 7; // ~7 Hz lope at idle (7 pulses/sec)
+                lfo.frequency.value = 7;
 
                 lfoGain = audioCtx.createGain();
-                lfoGain.gain.value = 0.35; // depth of lope
+                lfoGain.gain.value = 0.35;
 
                 lfoGainTarget = audioCtx.createGain();
-                lfoGainTarget.gain.value = 0.65; // base level; LFO adds/subtracts
+                lfoGainTarget.gain.value = 0.65;
 
-                // Route: LFO -> lfoGain -> lfoGainTarget.gain (audio-rate mod of gain)
                 lfo.connect(lfoGain);
                 lfoGain.connect(lfoGainTarget.gain);
                 lfo.start();
 
-                // Insert lfoGainTarget between engineBus and filter
                 engineBus.disconnect();
                 engineBus.connect(lfoGainTarget);
                 lfoGainTarget.connect(filterNode);
@@ -253,48 +271,83 @@
             }
         }
 
+        // ===== REV HANDLING =====
+        function startRev() {
+            if (!isAudioReady) {
+                // Audio not unlocked yet — init it now
+                initAudio();
+                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+            }
+            isRevving = true;
+            revBtn.classList.add('revving');
+        }
+
+        function stopRev() {
+            isRevving = false;
+            revBtn.classList.remove('revving');
+        }
+
+        // ===== SOUND UPDATE =====
         function updateBigBikeSound(speedKmh) {
             if (!audioCtx || !isAudioReady) return;
             if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
 
             const now = audioCtx.currentTime;
 
-            // --- Volume: idle floor then rises with speed ---
-            // Idle (0-5 km/h) has a small presence; then ramps up.
-            const speedNorm = clamp(speedKmh / 120, 0, 1);        // 0..1 at 120 km/h
-            const idlePresence = 0.06;                             // faint idle rumble
-            const volume = idlePresence + (1 - idlePresence) * Math.pow(speedNorm, 0.8);
-            const masterVol = volume * 0.55;
-            masterGain.gain.setTargetAtTime(masterVol, now, 0.09);
+            // Decay rev energy when not held
+            if (isRevving) {
+                revEnergy = Math.min(1, revEnergy + 0.08);
+            } else {
+                revEnergy *= 0.94;
+                if (revEnergy < 0.005) revEnergy = 0;
+            }
 
-            // --- Pitch: rev factor 1x at idle → ~3x at redline ---
-            const revFactor = 1 + speedNorm * 2.0;
+            // Combine speed + rev into "engine load"
+            const speedNorm = clamp(speedKmh / 120, 0, 1);
+            const load = clamp(speedNorm + revEnergy * 0.9, 0, 1);
+
+            // Volume: idle floor + load
+            const idlePresence = 0.07;
+            const volume = idlePresence + (1 - idlePresence) * Math.pow(load, 0.8);
+            const masterVol = volume * 0.55;
+            masterGain.gain.setTargetAtTime(masterVol, now, 0.06);
+
+            // Pitch: rev factor with extra kick when blipping
+            const revFactor = 1 + load * 2.0 + revEnergy * 0.8;
             oscillators.forEach(o => {
-                o.osc.frequency.setTargetAtTime(o.baseFreq * revFactor, now, 0.06);
+                o.osc.frequency.setTargetAtTime(o.baseFreq * revFactor, now, 0.04);
             });
 
-            // --- Filter: opens up as speed rises (more rasp/highs) ---
-            const cutoff = 350 + speedNorm * 2600;
-            filterNode.frequency.setTargetAtTime(cutoff, now, 0.08);
+            // Filter opens with load
+            const cutoff = 350 + load * 2600 + revEnergy * 800;
+            filterNode.frequency.setTargetAtTime(cutoff, now, 0.05);
 
-            // --- Noise: exhaust rasp gets louder and brighter with speed ---
-            noiseGain.gain.setTargetAtTime(0.08 + speedNorm * 0.22, now, 0.1);
-            noiseFilter.frequency.setTargetAtTime(140 + speedNorm * 900, now, 0.1);
+            // Exhaust rasp
+            noiseGain.gain.setTargetAtTime(0.08 + load * 0.22 + revEnergy * 0.1, now, 0.06);
+            noiseFilter.frequency.setTargetAtTime(140 + load * 900 + revEnergy * 400, now, 0.06);
 
-            // --- LFO lope: at idle, slow irregular pulse; smooths out at speed ---
-            // Idle lope ~7 Hz with deep modulation; at speed, faster & shallower
-            const lfoFreq = 7 + speedNorm * 18;        // 7 Hz idle → 25 Hz at speed
-            const lfoDepth = 0.35 * (1 - speedNorm * 0.7); // depth shrinks with speed
-            lfo.frequency.setTargetAtTime(lfoFreq, now, 0.1);
-            lfoGain.gain.setTargetAtTime(lfoDepth, now, 0.1);
+            // LFO lope: fast & shallow at high load; deep & slow at idle
+            const lfoFreq = 7 + load * 18 + revEnergy * 10;
+            const lfoDepth = 0.35 * (1 - load * 0.7);
+            lfo.frequency.setTargetAtTime(lfoFreq, now, 0.08);
+            lfoGain.gain.setTargetAtTime(lfoDepth, now, 0.08);
 
-            // update indicator
-            soundText.innerText = speedKmh > 1 ? 'Big bike: ROAR' : 'Big bike: idle';
+            // Indicator text
+            if (revEnergy > 0.15) {
+                soundText.innerText = 'Big bike: REVVING';
+            } else if (speedKmh > 1) {
+                soundText.innerText = 'Big bike: ROAR';
+            } else if (isRevving || revEnergy > 0.01) {
+                soundText.innerText = 'Big bike: blip';
+            } else {
+                soundText.innerText = 'Big bike: idle';
+            }
         }
 
         function stopAudio() {
             if (!audioCtx) return;
             masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.15);
+            revEnergy = 0;
             soundText.innerText = 'Big bike: OFF';
         }
 
@@ -479,6 +532,30 @@
             animate();
             startBtn.addEventListener('click', startTracking);
             stopBtn.addEventListener('click', stopTracking);
+
+            // REV button: press & hold to rev, release to let it fall back
+            revBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                startRev();
+            });
+            revBtn.addEventListener('pointerup', stopRev);
+            revBtn.addEventListener('pointerleave', stopRev);
+            revBtn.addEventListener('pointercancel', stopRev);
+
+            // Keyboard shortcut: hold SPACE to rev
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && !e.repeat) {
+                    e.preventDefault();
+                    startRev();
+                }
+            });
+            window.addEventListener('keyup', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    stopRev();
+                }
+            });
+
             window.addEventListener('beforeunload', () => {
                 if (watchId !== null) navigator.geolocation.clearWatch(watchId);
                 if (audioCtx) audioCtx.close().catch(() => {});
