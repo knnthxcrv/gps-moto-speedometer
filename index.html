@@ -5,183 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>GPS Speedometer · Big Bike Sound</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             background: #0b0f14;
             font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 12px;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 12px;
         }
-
         .dashboard {
             background: #1a1e26;
             border-radius: 60px 60px 40px 40px;
             padding: 28px 24px 32px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), inset 0 1px 4px rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 1px 4px rgba(255,255,255,0.08);
             border: 1px solid #3a404c;
-            max-width: 500px;
-            width: 100%;
+            max-width: 500px; width: 100%;
         }
-
-        .speedo-wrapper {
-            position: relative;
-            display: flex;
-            justify-content: center;
-            margin-bottom: 8px;
-        }
-
+        .speedo-wrapper { position: relative; display: flex; justify-content: center; margin-bottom: 8px; }
         canvas {
-            width: 100%;
-            height: auto;
-            display: block;
-            border-radius: 50%;
-            filter: drop-shadow(0 12px 18px #00000080);
-            background: #0e1217;
+            width: 100%; height: auto; display: block; border-radius: 50%;
+            filter: drop-shadow(0 12px 18px #00000080); background: #0e1217;
         }
-
         .speed-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -55%);
-            font-size: 4.8rem;
-            font-weight: 800;
-            color: #f5f9ff;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%);
+            font-size: 4.8rem; font-weight: 800; color: #f5f9ff;
             text-shadow: 0 0 20px #4aaaff, 0 0 8px #1e90ff;
-            letter-spacing: 4px;
-            font-variant-numeric: tabular-nums;
-            line-height: 1;
+            letter-spacing: 4px; font-variant-numeric: tabular-nums; line-height: 1;
         }
-
         .unit {
-            position: absolute;
-            bottom: 22%;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #9aaec9;
-            font-size: 1rem;
-            font-weight: 500;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            background: #0b0f14cc;
-            padding: 4px 14px;
-            border-radius: 40px;
-            backdrop-filter: blur(4px);
-            border: 1px solid #2f3a4b;
+            position: absolute; bottom: 22%; left: 50%; transform: translateX(-50%);
+            color: #9aaec9; font-size: 1rem; font-weight: 500; letter-spacing: 3px;
+            text-transform: uppercase; background: #0b0f14cc; padding: 4px 14px;
+            border-radius: 40px; backdrop-filter: blur(4px); border: 1px solid #2f3a4b;
         }
-
         .gps-status {
-            text-align: center;
-            color: #7e8b9f;
-            font-size: 0.9rem;
-            margin-top: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            background: #0d1219;
-            padding: 8px 16px;
-            border-radius: 60px;
-            border: 1px solid #2a323f;
-            width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
+            text-align: center; color: #7e8b9f; font-size: 0.9rem; margin-top: 8px;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            background: #0d1219; padding: 8px 16px; border-radius: 60px;
+            border: 1px solid #2a323f; width: fit-content;
+            margin-left: auto; margin-right: auto;
         }
-
         .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #4caf50;
-            box-shadow: 0 0 10px #4caf50;
-            transition: 0.3s;
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #4caf50; box-shadow: 0 0 10px #4caf50; transition: 0.3s;
         }
-
-        .dot.inactive {
-            background: #f44336;
-            box-shadow: 0 0 10px #f44336;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            margin-top: 24px;
-        }
-
+        .dot.inactive { background: #f44336; box-shadow: 0 0 10px #f44336; }
+        .controls { display: flex; justify-content: center; gap: 24px; margin-top: 24px; }
         button {
-            background: #222a35;
-            border: none;
-            border-radius: 50px;
-            padding: 14px 32px;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #d3e2ff;
-            letter-spacing: 1px;
-            cursor: pointer;
+            background: #222a35; border: none; border-radius: 50px;
+            padding: 14px 32px; font-size: 1rem; font-weight: 600; color: #d3e2ff;
+            letter-spacing: 1px; cursor: pointer;
             box-shadow: 0 6px 0 #0b0f14, 0 8px 20px #00000080;
-            transition: 0.07s ease;
-            border: 1px solid #3e4b5e;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            transition: 0.07s ease; border: 1px solid #3e4b5e;
+            display: flex; align-items: center; gap: 10px;
         }
-
-        button:active {
-            transform: translateY(5px);
-            box-shadow: 0 2px 0 #0b0f14, 0 8px 20px #00000080;
-        }
-
-        button:disabled {
-            opacity: 0.45;
-            transform: translateY(3px);
-            box-shadow: 0 3px 0 #0b0f14, 0 8px 20px #00000080;
-            pointer-events: none;
-        }
-
+        button:active { transform: translateY(5px); box-shadow: 0 2px 0 #0b0f14, 0 8px 20px #00000080; }
+        button:disabled { opacity: 0.45; transform: translateY(3px); box-shadow: 0 3px 0 #0b0f14, 0 8px 20px #00000080; pointer-events: none; }
         .sound-indicator {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: #b7c9e0;
-            font-size: 0.85rem;
-            background: #0d1219;
-            padding: 6px 16px;
-            border-radius: 40px;
-            border: 1px solid #2d3746;
-            margin-left: 8px;
+            display: flex; align-items: center; gap: 6px; color: #b7c9e0;
+            font-size: 0.85rem; background: #0d1219; padding: 6px 16px;
+            border-radius: 40px; border: 1px solid #2d3746; margin-left: 8px;
         }
-
-        .sound-icon {
-            font-size: 1.2rem;
-        }
-
-        .footer-note {
-            text-align: center;
-            color: #4a576b;
-            font-size: 0.7rem;
-            margin-top: 18px;
-            letter-spacing: 0.5px;
-        }
-
-        /* small tweaks */
+        .sound-icon { font-size: 1.2rem; }
+        .footer-note { text-align: center; color: #4a576b; font-size: 0.7rem; margin-top: 18px; letter-spacing: 0.5px; }
         @media (max-width: 420px) {
-            .speed-text {
-                font-size: 3.6rem;
-            }
-            button {
-                padding: 12px 20px;
-                font-size: 0.9rem;
-            }
+            .speed-text { font-size: 3.6rem; }
+            button { padding: 12px 20px; font-size: 0.9rem; }
         }
     </style>
 </head>
@@ -192,501 +80,419 @@
             <div class="speed-text" id="speedDisplay">0</div>
             <div class="unit">km/h</div>
         </div>
-
         <div class="gps-status" id="gpsStatus">
             <span class="dot" id="gpsDot"></span>
             <span id="gpsMessage">GPS idle</span>
         </div>
-
         <div class="controls">
-            <button id="startBtn" title="Start GPS tracking">
-                ▶ START
-            </button>
-            <button id="stopBtn" disabled title="Stop GPS">
-                ⏹ STOP
-            </button>
+            <button id="startBtn" title="Start GPS tracking">▶ START</button>
+            <button id="stopBtn" disabled title="Stop GPS">⏹ STOP</button>
         </div>
-
         <div class="sound-indicator" id="soundIndicator">
             <span class="sound-icon">🏍️</span>
             <span id="soundText">Big bike: OFF</span>
         </div>
-
-        <div class="footer-note">
-            GPS speedometer · big bike rumble when moving
-        </div>
+        <div class="footer-note">GPS speedometer · realistic V-twin rumble</div>
     </div>
 
     <script>
-        (function() {
-            // ----- CANVAS SETUP -----
-            const canvas = document.getElementById('speedoCanvas');
-            const ctx = canvas.getContext('2d');
-            const speedDisplay = document.getElementById('speedDisplay');
-            const gpsDot = document.getElementById('gpsDot');
-            const gpsMessage = document.getElementById('gpsMessage');
-            const startBtn = document.getElementById('startBtn');
-            const stopBtn = document.getElementById('stopBtn');
-            const soundText = document.getElementById('soundText');
+    (function() {
+        // ===== CANVAS =====
+        const canvas = document.getElementById('speedoCanvas');
+        const ctx = canvas.getContext('2d');
+        const speedDisplay = document.getElementById('speedDisplay');
+        const gpsDot = document.getElementById('gpsDot');
+        const gpsMessage = document.getElementById('gpsMessage');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const soundText = document.getElementById('soundText');
+        const SIZE = 800;
+        canvas.width = SIZE;
+        canvas.height = SIZE;
 
-            const SIZE = 800;
-            canvas.width = SIZE;
-            canvas.height = SIZE;
+        let currentSpeed = 0;
+        let targetSpeed = 0;
+        const maxDisplaySpeed = 240;
+        let animationFrame = null;
 
-            // ----- SPEED STATE -----
-            let currentSpeed = 0;          // km/h (smoothed)
-            let targetSpeed = 0;           // from GPS
-            let maxDisplaySpeed = 240;     // gauge max (km/h)
-            let animationFrame = null;
+        let watchId = null;
+        let isTracking = false;
+        let lastPosition = null;
+        let lastUpdateTime = 0;
 
-            // ----- GPS / WATCH STATE -----
-            let watchId = null;
-            let isTracking = false;
-            let lastPosition = null;
-            let lastUpdateTime = 0;
+        const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
-            // ----- AUDIO (BIG BIKE RUMBLE) -----
-            let audioCtx = null;
-            let gainNode = null;
-            let oscillators = [];
-            let isSoundOn = false;
+        // ===== REALISTIC V-TWIN AUDIO ENGINE =====
+        let audioCtx = null;
+        let masterGain = null;
+        let engineBus = null;       // sums engine layers
+        let noiseSource = null;     // exhaust rasp
+        let noiseFilter = null;
+        let noiseGain = null;
+        let lfo = null;             // amplitude modulator (the "lope")
+        let lfoGain = null;         // depth of lope
+        let lfoGainTarget = null;   // gain node controlled by LFO
+        let oscillators = [];
+        let filterNode = null;
+        let isAudioReady = false;
 
-            // ----- UTILS -----
-            function clamp(value, min, max) {
-                return Math.min(max, Math.max(min, value));
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+                // Master chain: engineBus -> filter -> masterGain -> destination
+                masterGain = audioCtx.createGain();
+                masterGain.gain.value = 0;
+                masterGain.connect(audioCtx.destination);
+
+                filterNode = audioCtx.createBiquadFilter();
+                filterNode.type = 'lowpass';
+                filterNode.frequency.value = 1200;
+                filterNode.Q.value = 0.9;
+                filterNode.connect(masterGain);
+
+                engineBus = audioCtx.createGain();
+                engineBus.gain.value = 0.9;
+                engineBus.connect(filterNode);
+
+                // ---- LAYER 1: fundamental saw (the "bark") ----
+                const osc1 = audioCtx.createOscillator();
+                osc1.type = 'sawtooth';
+                osc1.frequency.value = 55; // ~A1, idle of a big twin
+                const g1 = audioCtx.createGain();
+                g1.gain.value = 0.5;
+                osc1.connect(g1);
+                g1.connect(engineBus);
+                osc1.start();
+                oscillators.push({ osc: osc1, gain: g1, baseFreq: 55, detune: 0 });
+
+                // ---- LAYER 2: sub-octave sine (the "thump") ----
+                const osc2 = audioCtx.createOscillator();
+                osc2.type = 'sine';
+                osc2.frequency.value = 27.5;
+                const g2 = audioCtx.createGain();
+                g2.gain.value = 0.7;
+                osc2.connect(g2);
+                g2.connect(engineBus);
+                osc2.start();
+                oscillators.push({ osc: osc2, gain: g2, baseFreq: 27.5, detune: 0 });
+
+                // ---- LAYER 3: second harmonic saw (the "growl") ----
+                const osc3 = audioCtx.createOscillator();
+                osc3.type = 'sawtooth';
+                osc3.frequency.value = 110;
+                const g3 = audioCtx.createGain();
+                g3.gain.value = 0.18;
+                osc3.connect(g3);
+                g3.connect(engineBus);
+                osc3.start();
+                oscillators.push({ osc: osc3, gain: g3, baseFreq: 110, detune: 0 });
+
+                // ---- LAYER 4: detuned saw for thickness/beating ----
+                const osc4 = audioCtx.createOscillator();
+                osc4.type = 'sawtooth';
+                osc4.frequency.value = 55;
+                osc4.detune.value = 12; // slightly sharp → beating
+                const g4 = audioCtx.createGain();
+                g4.gain.value = 0.22;
+                osc4.connect(g4);
+                g4.connect(engineBus);
+                osc4.start();
+                oscillators.push({ osc: osc4, gain: g4, baseFreq: 55, detune: 12 });
+
+                // ---- LAYER 5: exhaust rasp (filtered white noise) ----
+                const bufferSize = 2 * audioCtx.sampleRate;
+                const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+                noiseSource = audioCtx.createBufferSource();
+                noiseSource.buffer = noiseBuffer;
+                noiseSource.loop = true;
+
+                noiseFilter = audioCtx.createBiquadFilter();
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.value = 180;
+                noiseFilter.Q.value = 0.7;
+
+                noiseGain = audioCtx.createGain();
+                noiseGain.gain.value = 0.18;
+
+                noiseSource.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(engineBus);
+                noiseSource.start();
+
+                // ---- LFO: amplitude modulation (the V-twin "potato-potato" lope) ----
+                // A big twin fires irregularly; we simulate with a slow LFO
+                // that dips the engine bus volume at idle.
+                lfo = audioCtx.createOscillator();
+                lfo.type = 'sine';
+                lfo.frequency.value = 7; // ~7 Hz lope at idle (7 pulses/sec)
+
+                lfoGain = audioCtx.createGain();
+                lfoGain.gain.value = 0.35; // depth of lope
+
+                lfoGainTarget = audioCtx.createGain();
+                lfoGainTarget.gain.value = 0.65; // base level; LFO adds/subtracts
+
+                // Route: LFO -> lfoGain -> lfoGainTarget.gain (audio-rate mod of gain)
+                lfo.connect(lfoGain);
+                lfoGain.connect(lfoGainTarget.gain);
+                lfo.start();
+
+                // Insert lfoGainTarget between engineBus and filter
+                engineBus.disconnect();
+                engineBus.connect(lfoGainTarget);
+                lfoGainTarget.connect(filterNode);
+
+                isAudioReady = true;
+            } catch (e) {
+                console.warn('Audio init failed:', e);
             }
+        }
 
-            // ----- INIT AUDIO (call from user gesture) -----
-            function initAudio() {
-                if (audioCtx) return; // already created
+        function updateBigBikeSound(speedKmh) {
+            if (!audioCtx || !isAudioReady) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
 
-                try {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    // master gain for big bike rumble
-                    gainNode = audioCtx.createGain();
-                    gainNode.gain.value = 0;   // silent by default
-                    gainNode.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
 
-                    // --- create deep V-twin style rumble (layered saw + sine) ---
-                    // Osc1: low sawtooth ~ 42 Hz (fundamental)
-                    const osc1 = audioCtx.createOscillator();
-                    osc1.type = 'sawtooth';
-                    osc1.frequency.value = 42;
+            // --- Volume: idle floor then rises with speed ---
+            // Idle (0-5 km/h) has a small presence; then ramps up.
+            const speedNorm = clamp(speedKmh / 120, 0, 1);        // 0..1 at 120 km/h
+            const idlePresence = 0.06;                             // faint idle rumble
+            const volume = idlePresence + (1 - idlePresence) * Math.pow(speedNorm, 0.8);
+            const masterVol = volume * 0.55;
+            masterGain.gain.setTargetAtTime(masterVol, now, 0.09);
 
-                    // Osc2: sine one octave lower (21 Hz) for sub
-                    const osc2 = audioCtx.createOscillator();
-                    osc2.type = 'sine';
-                    osc2.frequency.value = 21;
+            // --- Pitch: rev factor 1x at idle → ~3x at redline ---
+            const revFactor = 1 + speedNorm * 2.0;
+            oscillators.forEach(o => {
+                o.osc.frequency.setTargetAtTime(o.baseFreq * revFactor, now, 0.06);
+            });
 
-                    // Osc3: another saw at 46 Hz for slight beat
-                    const osc3 = audioCtx.createOscillator();
-                    osc3.type = 'sawtooth';
-                    osc3.frequency.value = 46;
+            // --- Filter: opens up as speed rises (more rasp/highs) ---
+            const cutoff = 350 + speedNorm * 2600;
+            filterNode.frequency.setTargetAtTime(cutoff, now, 0.08);
 
-                    // Osc4: high freq 'click' / valve noise (square, low gain)
-                    const osc4 = audioCtx.createOscillator();
-                    osc4.type = 'square';
-                    osc4.frequency.value = 83;
+            // --- Noise: exhaust rasp gets louder and brighter with speed ---
+            noiseGain.gain.setTargetAtTime(0.08 + speedNorm * 0.22, now, 0.1);
+            noiseFilter.frequency.setTargetAtTime(140 + speedNorm * 900, now, 0.1);
 
-                    // Individual gain stages to mix them
-                    const g1 = audioCtx.createGain();
-                    g1.gain.value = 0.6;
-                    const g2 = audioCtx.createGain();
-                    g2.gain.value = 0.5;
-                    const g3 = audioCtx.createGain();
-                    g3.gain.value = 0.25;
-                    const g4 = audioCtx.createGain();
-                    g4.gain.value = 0.08;   // subtle high end
+            // --- LFO lope: at idle, slow irregular pulse; smooths out at speed ---
+            // Idle lope ~7 Hz with deep modulation; at speed, faster & shallower
+            const lfoFreq = 7 + speedNorm * 18;        // 7 Hz idle → 25 Hz at speed
+            const lfoDepth = 0.35 * (1 - speedNorm * 0.7); // depth shrinks with speed
+            lfo.frequency.setTargetAtTime(lfoFreq, now, 0.1);
+            lfoGain.gain.setTargetAtTime(lfoDepth, now, 0.1);
 
-                    // connect oscillators to their gains
-                    osc1.connect(g1);
-                    osc2.connect(g2);
-                    osc3.connect(g3);
-                    osc4.connect(g4);
+            // update indicator
+            soundText.innerText = speedKmh > 1 ? 'Big bike: ROAR' : 'Big bike: idle';
+        }
 
-                    // mix into main gain
-                    g1.connect(gainNode);
-                    g2.connect(gainNode);
-                    g3.connect(gainNode);
-                    g4.connect(gainNode);
+        function stopAudio() {
+            if (!audioCtx) return;
+            masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.15);
+            soundText.innerText = 'Big bike: OFF';
+        }
 
-                    // start all
-                    osc1.start();
-                    osc2.start();
-                    osc3.start();
-                    osc4.start();
+        // ===== DRAW =====
+        function drawSpeedometer(speed) {
+            const w = canvas.width, h = canvas.height;
+            const centerX = w / 2, centerY = h / 2, radius = w * 0.42;
+            ctx.clearRect(0, 0, w, h);
 
-                    // store oscillators and gains for later frequency modulation
-                    oscillators = [
-                        { osc: osc1, gain: g1, baseFreq: 42, type: 'fundamental' },
-                        { osc: osc2, gain: g2, baseFreq: 21, type: 'sub' },
-                        { osc: osc3, gain: g3, baseFreq: 46, type: 'beat' },
-                        { osc: osc4, gain: g4, baseFreq: 83, type: 'texture' }
-                    ];
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius + 18, 0, Math.PI * 2);
+            ctx.fillStyle = '#0e1217'; ctx.fill();
+            ctx.shadowColor = '#000'; ctx.shadowBlur = 20;
+            ctx.strokeStyle = '#2e3b4e'; ctx.lineWidth = 6; ctx.stroke();
+            ctx.shadowBlur = 0;
 
-                    // start silent, will be adjusted in update loop
-                } catch (e) {
-                    console.warn('AudioContext not available:', e);
-                }
+            const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.2, centerX, centerY, radius);
+            gradient.addColorStop(0, '#121a24');
+            gradient.addColorStop(0.9, '#0a0f14');
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient; ctx.fill();
+            ctx.strokeStyle = '#2b3f5c'; ctx.lineWidth = 3; ctx.stroke();
+
+            const startAngle = Math.PI * 0.75;
+            const endAngle = Math.PI * 2.25;
+            const angleRange = endAngle - startAngle;
+            const majorStep = 20;
+            const totalMajor = maxDisplaySpeed / majorStep;
+            const minorStep = 5;
+            const totalMinor = maxDisplaySpeed / minorStep;
+
+            for (let i = 0; i <= totalMinor; i++) {
+                const value = i * minorStep;
+                if (value > maxDisplaySpeed) continue;
+                const angle = startAngle + (value / maxDisplaySpeed) * angleRange;
+                const innerR = radius * 0.82, outerR = radius * 0.9;
+                const x1 = centerX + Math.cos(angle) * innerR;
+                const y1 = centerY + Math.sin(angle) * innerR;
+                const x2 = centerX + Math.cos(angle) * outerR;
+                const y2 = centerY + Math.sin(angle) * outerR;
+                ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+                ctx.strokeStyle = '#5d7b9e'; ctx.lineWidth = (i % 4 === 0) ? 2 : 1; ctx.stroke();
             }
+            for (let i = 0; i <= totalMajor; i++) {
+                const value = i * majorStep;
+                if (value > maxDisplaySpeed) continue;
+                const angle = startAngle + (value / maxDisplaySpeed) * angleRange;
+                const innerR = radius * 0.75, outerR = radius * 0.92;
+                const x1 = centerX + Math.cos(angle) * innerR;
+                const y1 = centerY + Math.sin(angle) * innerR;
+                const x2 = centerX + Math.cos(angle) * outerR;
+                const y2 = centerY + Math.sin(angle) * outerR;
+                ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+                ctx.strokeStyle = '#b8d0ee'; ctx.lineWidth = 4; ctx.stroke();
 
-            // ----- UPDATE AUDIO BASED ON SPEED -----
-            function updateBigBikeSound(speedKmh) {
-                if (!audioCtx || !gainNode) return;
-
-                // resume context if suspended (autoplay policy)
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume().catch(() => {});
-                }
-
-                // Map speed to overall volume: 0 at 0 km/h, full at 60+ km/h
-                const vol = clamp(speedKmh / 60, 0, 1);
-                // big bike rumble is quiet at idle then roars
-                const masterVol = vol * 0.45;  // keep headroom
-
-                // smooth gain transition
-                const now = audioCtx.currentTime;
-                gainNode.gain.setTargetAtTime(masterVol, now, 0.08);
-
-                // frequency modulation: higher speed -> higher pitch (blend)
-                const freqFactor = 1.0 + (speedKmh / 140) * 0.9;  // up to ~1.9x at 140 km/h
-                oscillators.forEach(item => {
-                    if (item.osc && item.baseFreq) {
-                        const newFreq = item.baseFreq * freqFactor;
-                        item.osc.frequency.setTargetAtTime(newFreq, now, 0.05);
-                    }
-                });
-
-                // update sound text
-                if (vol > 0.02) {
-                    soundText.innerText = 'Big bike: ON';
-                } else {
-                    soundText.innerText = 'Big bike: OFF';
-                }
-                isSoundOn = vol > 0.02;
-            }
-
-            // ----- DRAW SPEEDOMETER (called every frame) -----
-            function drawSpeedometer(speed) {
-                const w = canvas.width;
-                const h = canvas.height;
-                const centerX = w / 2;
-                const centerY = h / 2;
-                const radius = w * 0.42;
-
-                // Clear canvas
-                ctx.clearRect(0, 0, w, h);
-
-                // Background outer ring
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius + 18, 0, Math.PI * 2);
-                ctx.fillStyle = '#0e1217';
-                ctx.fill();
-                ctx.shadowColor = '#000000';
-                ctx.shadowBlur = 20;
-                ctx.strokeStyle = '#2e3b4e';
-                ctx.lineWidth = 6;
-                ctx.stroke();
+                const labelR = radius * 0.6;
+                const lx = centerX + Math.cos(angle) * labelR;
+                const ly = centerY + Math.sin(angle) * labelR;
+                ctx.font = 'bold 32px "Segoe UI", Roboto, sans-serif';
+                ctx.fillStyle = '#d0e2ff';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.shadowColor = '#1e90ff'; ctx.shadowBlur = 8;
+                ctx.fillText(value, lx, ly);
                 ctx.shadowBlur = 0;
-
-                // Gauge background
-                const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.2, centerX, centerY, radius);
-                gradient.addColorStop(0, '#121a24');
-                gradient.addColorStop(0.9, '#0a0f14');
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                ctx.fillStyle = gradient;
-                ctx.fill();
-                ctx.strokeStyle = '#2b3f5c';
-                ctx.lineWidth = 3;
-                ctx.stroke();
-
-                // ----- TICK MARKS & LABELS -----
-                const startAngle = Math.PI * 0.75;  // 135° from right (bottom-left)
-                const endAngle = Math.PI * 2.25;     // 405° (same as 45°)
-                const angleRange = endAngle - startAngle; // 270° sweep
-
-                // Draw major ticks every 20 km/h (maxDisplaySpeed = 240)
-                const majorStep = 20;
-                const totalMajor = maxDisplaySpeed / majorStep; // 12
-
-                // Draw minor ticks (every 5 km/h)
-                const minorStep = 5;
-                const totalMinor = maxDisplaySpeed / minorStep; // 48
-
-                // minor ticks
-                for (let i = 0; i <= totalMinor; i++) {
-                    const value = i * minorStep;
-                    if (value > maxDisplaySpeed) continue;
-                    const angle = startAngle + (value / maxDisplaySpeed) * angleRange;
-                    const innerR = radius * 0.82;
-                    const outerR = radius * 0.9;
-
-                    const x1 = centerX + Math.cos(angle) * innerR;
-                    const y1 = centerY + Math.sin(angle) * innerR;
-                    const x2 = centerX + Math.cos(angle) * outerR;
-                    const y2 = centerY + Math.sin(angle) * outerR;
-
-                    ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                    ctx.strokeStyle = '#5d7b9e';
-                    ctx.lineWidth = (i % 4 === 0) ? 2 : 1;
-                    ctx.stroke();
-                }
-
-                // major ticks + labels
-                for (let i = 0; i <= totalMajor; i++) {
-                    const value = i * majorStep;
-                    if (value > maxDisplaySpeed) continue;
-                    const angle = startAngle + (value / maxDisplaySpeed) * angleRange;
-                    const innerR = radius * 0.75;
-                    const outerR = radius * 0.92;
-
-                    const x1 = centerX + Math.cos(angle) * innerR;
-                    const y1 = centerY + Math.sin(angle) * innerR;
-                    const x2 = centerX + Math.cos(angle) * outerR;
-                    const y2 = centerY + Math.sin(angle) * outerR;
-
-                    ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                    ctx.strokeStyle = '#b8d0ee';
-                    ctx.lineWidth = 4;
-                    ctx.stroke();
-
-                    // labels
-                    const labelR = radius * 0.6;
-                    const lx = centerX + Math.cos(angle) * labelR;
-                    const ly = centerY + Math.sin(angle) * labelR;
-
-                    ctx.font = 'bold 32px "Segoe UI", Roboto, sans-serif';
-                    ctx.fillStyle = '#d0e2ff';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.shadowColor = '#1e90ff';
-                    ctx.shadowBlur = 8;
-                    ctx.fillText(value, lx, ly);
-                    ctx.shadowBlur = 0;
-                }
-
-                // ----- NEEDLE -----
-                const speedRatio = clamp(speed / maxDisplaySpeed, 0, 1);
-                const needleAngle = startAngle + speedRatio * angleRange;
-
-                // needle shadow/glow
-                ctx.shadowColor = '#1e90ff';
-                ctx.shadowBlur = 22;
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                const needleLen = radius * 0.7;
-                const tipX = centerX + Math.cos(needleAngle) * needleLen;
-                const tipY = centerY + Math.sin(needleAngle) * needleLen;
-                ctx.lineTo(tipX, tipY);
-                ctx.lineWidth = 10;
-                ctx.strokeStyle = '#f0f8ff';
-                ctx.stroke();
-
-                // needle core (orange/red)
-                ctx.shadowBlur = 16;
-                ctx.shadowColor = '#ff5500';
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.lineTo(tipX, tipY);
-                ctx.lineWidth = 6;
-                ctx.strokeStyle = '#ff8c42';
-                ctx.stroke();
-
-                // center cap
-                ctx.shadowBlur = 12;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, 18, 0, Math.PI * 2);
-                ctx.fillStyle = '#223344';
-                ctx.fill();
-                ctx.strokeStyle = '#aaccff';
-                ctx.lineWidth = 4;
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-
-                // ----- DIGITAL SPEED TEXT (overlay via canvas? we already have DOM) -----
-                // We keep DOM text, but also draw a subtle ring
             }
 
-            // ----- ANIMATION LOOP (smooth needle & sound) -----
-            function animate() {
-                // Smooth speed (exponential moving average)
-                const diff = targetSpeed - currentSpeed;
-                if (Math.abs(diff) > 0.1) {
-                    currentSpeed += diff * 0.12; // smoothing factor
-                } else {
-                    currentSpeed = targetSpeed;
-                }
-                if (currentSpeed < 0.1) currentSpeed = 0;
+            const speedRatio = clamp(speed / maxDisplaySpeed, 0, 1);
+            const needleAngle = startAngle + speedRatio * angleRange;
+            ctx.shadowColor = '#1e90ff'; ctx.shadowBlur = 22;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            const needleLen = radius * 0.7;
+            const tipX = centerX + Math.cos(needleAngle) * needleLen;
+            const tipY = centerY + Math.sin(needleAngle) * needleLen;
+            ctx.lineTo(tipX, tipY);
+            ctx.lineWidth = 10; ctx.strokeStyle = '#f0f8ff'; ctx.stroke();
 
-                // update display
-                const displaySpeed = Math.round(currentSpeed);
-                speedDisplay.textContent = displaySpeed;
+            ctx.shadowBlur = 16; ctx.shadowColor = '#ff5500';
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(tipX, tipY);
+            ctx.lineWidth = 6; ctx.strokeStyle = '#ff8c42'; ctx.stroke();
 
-                // update sound
-                updateBigBikeSound(currentSpeed);
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 18, 0, Math.PI * 2);
+            ctx.fillStyle = '#223344'; ctx.fill();
+            ctx.strokeStyle = '#aaccff'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
 
-                // draw gauge
-                drawSpeedometer(currentSpeed);
+        function animate() {
+            const diff = targetSpeed - currentSpeed;
+            if (Math.abs(diff) > 0.1) currentSpeed += diff * 0.12;
+            else currentSpeed = targetSpeed;
+            if (currentSpeed < 0.1) currentSpeed = 0;
 
-                // continue loop
-                animationFrame = requestAnimationFrame(animate);
+            speedDisplay.textContent = Math.round(currentSpeed);
+            updateBigBikeSound(currentSpeed);
+            drawSpeedometer(currentSpeed);
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        function handlePosition(position) {
+            if (!isTracking) return;
+            const { speed, coords } = position;
+            let speedKmh = 0;
+            if (speed !== null && speed !== undefined && !isNaN(speed)) {
+                speedKmh = speed * 3.6;
+            } else if (lastPosition) {
+                const lat1 = lastPosition.coords.latitude;
+                const lon1 = lastPosition.coords.longitude;
+                const lat2 = coords.latitude;
+                const lon2 = coords.longitude;
+                const R = 6371e3;
+                const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+                const Δφ = (lat2 - lat1) * Math.PI / 180;
+                const Δλ = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const distance = R * c;
+                const timeDiff = (performance.now() - lastUpdateTime) / 1000;
+                if (timeDiff > 0.3 && distance > 1) speedKmh = (distance / timeDiff) * 3.6;
             }
+            speedKmh = clamp(speedKmh, 0, maxDisplaySpeed);
+            targetSpeed = speedKmh;
+            lastPosition = position;
+            lastUpdateTime = performance.now();
+            gpsDot.className = 'dot';
+            gpsMessage.textContent = `GPS active · ${coords.accuracy ? '±' + Math.round(coords.accuracy) + 'm' : 'signal ok'}`;
+        }
 
-            // ----- GPS HANDLING -----
-            function handlePosition(position) {
-                if (!isTracking) return;
+        function handleGpsError(err) {
+            gpsDot.className = 'dot inactive';
+            let msg = 'GPS error';
+            if (err.code === 1) msg = 'Permission denied';
+            else if (err.code === 2) msg = 'Position unavailable';
+            else if (err.code === 3) msg = 'Timeout';
+            gpsMessage.textContent = msg;
+        }
 
-                const { speed, coords } = position;
-                // speed is in m/s, may be null if not available
-                let speedKmh = 0;
-                if (speed !== null && speed !== undefined && !isNaN(speed)) {
-                    speedKmh = speed * 3.6; // m/s to km/h
-                } else {
-                    // fallback: compute from previous position (rare)
-                    if (lastPosition) {
-                        const lat1 = lastPosition.coords.latitude;
-                        const lon1 = lastPosition.coords.longitude;
-                        const lat2 = coords.latitude;
-                        const lon2 = coords.longitude;
-                        const R = 6371e3; // meters
-                        const φ1 = lat1 * Math.PI / 180;
-                        const φ2 = lat2 * Math.PI / 180;
-                        const Δφ = (lat2 - lat1) * Math.PI / 180;
-                        const Δλ = (lon2 - lon1) * Math.PI / 180;
-                        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                            Math.cos(φ1) * Math.cos(φ2) *
-                            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-                        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                        const distance = R * c; // meters
-                        const timeDiff = (performance.now() - lastUpdateTime) / 1000; // seconds
-                        if (timeDiff > 0.3 && distance > 1) {
-                            speedKmh = (distance / timeDiff) * 3.6;
-                        }
-                    }
-                }
-
-                // clamp to reasonable range (avoid crazy spikes)
-                speedKmh = clamp(speedKmh, 0, maxDisplaySpeed);
-                targetSpeed = speedKmh;
-                lastPosition = position;
-                lastUpdateTime = performance.now();
-
-                // update GPS status
-                gpsDot.className = 'dot';
-                gpsMessage.textContent = `GPS active · ${coords.accuracy ? '±' + Math.round(coords.accuracy) + 'm' : 'signal ok'}`;
-            }
-
-            function handleGpsError(err) {
-                console.warn('GPS error:', err);
+        function startTracking() {
+            if (isTracking) return;
+            if (!navigator.geolocation) {
+                gpsMessage.textContent = 'Geolocation not supported';
                 gpsDot.className = 'dot inactive';
-                let msg = 'GPS error';
-                if (err.code === 1) msg = 'Permission denied';
-                else if (err.code === 2) msg = 'Position unavailable';
-                else if (err.code === 3) msg = 'Timeout';
-                gpsMessage.textContent = msg;
-                // we keep tracking but show error; no automatic stop
+                return;
             }
+            initAudio();
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
 
-            function startTracking() {
-                if (isTracking) return;
+            isTracking = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            gpsDot.className = 'dot';
+            gpsMessage.textContent = 'Requesting GPS...';
+            targetSpeed = 0; currentSpeed = 0;
 
-                if (!navigator.geolocation) {
-                    gpsMessage.textContent = 'Geolocation not supported';
-                    gpsDot.className = 'dot inactive';
-                    return;
-                }
+            watchId = navigator.geolocation.watchPosition(
+                handlePosition, handleGpsError,
+                { enableHighAccuracy: true, maximumAge: 500, timeout: 12000 }
+            );
+        }
 
-                // init audio on user gesture (button click)
-                initAudio();
-                if (audioCtx && audioCtx.state === 'suspended') {
-                    audioCtx.resume().catch(() => {});
-                }
-
-                isTracking = true;
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                gpsDot.className = 'dot';
-                gpsMessage.textContent = 'Requesting GPS...';
-
-                // reset speeds
-                targetSpeed = 0;
-                currentSpeed = 0;
-
-                const options = {
-                    enableHighAccuracy: true,
-                    maximumAge: 500,
-                    timeout: 12000
-                };
-
-                watchId = navigator.geolocation.watchPosition(
-                    handlePosition,
-                    handleGpsError,
-                    options
-                );
+        function stopTracking() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
             }
+            isTracking = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            targetSpeed = 0; currentSpeed = 0;
+            gpsDot.className = 'dot inactive';
+            gpsMessage.textContent = 'GPS stopped';
+            stopAudio();
+        }
 
-            function stopTracking() {
-                if (watchId !== null) {
-                    navigator.geolocation.clearWatch(watchId);
-                    watchId = null;
+        function init() {
+            drawSpeedometer(0);
+            animate();
+            startBtn.addEventListener('click', startTracking);
+            stopBtn.addEventListener('click', stopTracking);
+            window.addEventListener('beforeunload', () => {
+                if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+                if (audioCtx) audioCtx.close().catch(() => {});
+            });
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(() => {});
+                } else {
+                    if (audioCtx && audioCtx.state === 'suspended' && isTracking) audioCtx.resume().catch(() => {});
                 }
-                isTracking = false;
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
-                targetSpeed = 0;
-                currentSpeed = 0;
-                gpsDot.className = 'dot inactive';
-                gpsMessage.textContent = 'GPS stopped';
-
-                // fade out sound
-                if (gainNode && audioCtx) {
-                    gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
-                }
-                soundText.innerText = 'Big bike: OFF';
-                isSoundOn = false;
-            }
-
-            // ----- INITIALISE / EVENT LISTENERS -----
-            function init() {
-                // initial drawing
-                drawSpeedometer(0);
-                animate();  // start animation loop (speed 0)
-
-                startBtn.addEventListener('click', startTracking);
-                stopBtn.addEventListener('click', stopTracking);
-
-                // handle page unload (cleanup)
-                window.addEventListener('beforeunload', () => {
-                    if (watchId !== null) {
-                        navigator.geolocation.clearWatch(watchId);
-                    }
-                    if (audioCtx) {
-                        audioCtx.close().catch(() => {});
-                    }
-                });
-
-                // Handle visibility change (optional: suspend audio if hidden)
-                document.addEventListener('visibilitychange', () => {
-                    if (document.hidden) {
-                        if (audioCtx && audioCtx.state === 'running') {
-                            audioCtx.suspend().catch(() => {});
-                        }
-                    } else {
-                        if (audioCtx && audioCtx.state === 'suspended' && isTracking) {
-                            audioCtx.resume().catch(() => {});
-                        }
-                    }
-                });
-            }
-
-            // start everything when DOM ready
-            init();
-        })();
+            });
+        }
+        init();
+    })();
     </script>
 </body>
 </html>
