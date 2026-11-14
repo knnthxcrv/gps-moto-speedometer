@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>GPS Speedometer · E-Bike Edition</title>
+    <title>GPS Speedometer · E-Bike v2</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -15,11 +15,29 @@
         .dashboard {
             background: #1a1e26;
             border-radius: 60px 60px 40px 40px;
-            padding: 28px 24px 32px;
+            padding: 24px 22px 28px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 1px 4px rgba(255,255,255,0.08);
             border: 1px solid #3a404c;
             max-width: 500px; width: 100%;
+            position: relative;
         }
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px; padding: 0 4px;
+        }
+        .app-title {
+            color: #8fa4c0; font-size: 0.75rem; letter-spacing: 2px;
+            text-transform: uppercase; font-weight: 600;
+        }
+        .gear-btn {
+            background: #222a35; border: 1px solid #3e4b5e;
+            border-radius: 50%; width: 38px; height: 38px;
+            color: #b7c9e0; font-size: 1.2rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
+        }
+        .gear-btn:hover { background: #2a3542; transform: rotate(30deg); }
+
         .speedo-wrapper { position: relative; display: flex; justify-content: center; margin-bottom: 8px; }
         canvas {
             width: 100%; height: auto; display: block; border-radius: 50%;
@@ -38,18 +56,45 @@
             border-radius: 40px; backdrop-filter: blur(4px); border: 1px solid #2f3a4b;
         }
         .gps-status {
-            text-align: center; color: #7e8b9f; font-size: 0.9rem; margin-top: 8px;
+            text-align: center; color: #7e8b9f; font-size: 0.85rem; margin-top: 8px;
             display: flex; justify-content: center; align-items: center; gap: 8px;
-            background: #0d1219; padding: 8px 16px; border-radius: 60px;
+            background: #0d1219; padding: 7px 14px; border-radius: 60px;
             border: 1px solid #2a323f; width: fit-content;
-            margin-left: auto; margin-right: auto;
+            margin-left: auto; margin-right: auto; transition: 0.3s;
         }
+        .gps-status.good { border-color: #2e5d3e; }
+        .gps-status.warn { border-color: #5d5a2e; }
+        .gps-status.bad  { border-color: #5d2e2e; }
+
         .dot {
             width: 10px; height: 10px; border-radius: 50%;
             background: #4caf50; box-shadow: 0 0 10px #4caf50; transition: 0.3s;
         }
-        .dot.inactive { background: #f44336; box-shadow: 0 0 10px #f44336; }
-        .controls { display: flex; justify-content: center; gap: 16px; margin-top: 24px; flex-wrap: wrap; }
+        .dot.good { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
+        .dot.warn { background: #ffb300; box-shadow: 0 0 10px #ffb300; }
+        .dot.bad  { background: #f44336; box-shadow: 0 0 10px #f44336; }
+        .dot.idle { background: #555; box-shadow: 0 0 10px #555; }
+
+        /* Stats strip */
+        .stats-strip {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 8px; margin-top: 14px;
+        }
+        .stat {
+            background: #0d1219; border: 1px solid #2a323f;
+            border-radius: 14px; padding: 8px 4px; text-align: center;
+        }
+        .stat-label {
+            color: #6b7f99; font-size: 0.6rem; letter-spacing: 1.5px;
+            text-transform: uppercase; font-weight: 600;
+        }
+        .stat-value {
+            color: #e8f0ff; font-size: 1.05rem; font-weight: 700;
+            margin-top: 2px; font-variant-numeric: tabular-nums;
+        }
+        .stat-value small { font-size: 0.6rem; color: #7e8b9f; font-weight: 500; }
+
+        .controls { display: flex; justify-content: center; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
         button {
             background: #222a35; border: none; border-radius: 50px;
             padding: 14px 32px; font-size: 1rem; font-weight: 600; color: #d3e2ff;
@@ -60,13 +105,14 @@
         }
         button:active { transform: translateY(5px); box-shadow: 0 2px 0 #0b0f14, 0 8px 20px #00000080; }
         button:disabled { opacity: 0.45; transform: translateY(3px); box-shadow: 0 3px 0 #0b0f14, 0 8px 20px #00000080; pointer-events: none; }
+
         .sound-indicator {
-            display: flex; align-items: center; gap: 6px; color: #b7c9e0;
-            font-size: 0.85rem; background: #0d1219; padding: 6px 16px;
-            border-radius: 40px; border: 1px solid #2d3746; margin-left: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            color: #b7c9e0; font-size: 0.85rem; background: #0d1219;
+            padding: 6px 16px; border-radius: 40px; border: 1px solid #2d3746;
+            margin-top: 14px; width: fit-content; margin-left: auto; margin-right: auto;
         }
         .sound-icon { font-size: 1.2rem; }
-        .footer-note { text-align: center; color: #4a576b; font-size: 0.7rem; margin-top: 18px; letter-spacing: 0.5px; }
 
         .rev-btn {
             background: linear-gradient(180deg, #ff7a2f 0%, #d43d00 100%);
@@ -85,67 +131,252 @@
         .rev-btn.revving { animation: revPulse 0.12s ease-in-out infinite alternate; }
         @keyframes revPulse { from { filter: brightness(1); } to { filter: brightness(1.5); } }
 
-        /* calibration badge */
-        .calib {
-            text-align: center; margin-top: 12px; font-size: 0.72rem;
-            color: #6b7f99; letter-spacing: 1px;
+        .footer-note { text-align: center; color: #4a576b; font-size: 0.7rem; margin-top: 14px; letter-spacing: 0.5px; }
+
+        /* ===== SETTINGS PANEL ===== */
+        .settings-overlay {
+            position: fixed; inset: 0; background: #000000cc;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; opacity: 0; pointer-events: none; transition: 0.25s;
+            backdrop-filter: blur(4px); padding: 16px;
         }
-        .calib span { color: #ffa640; font-weight: 700; }
+        .settings-overlay.open { opacity: 1; pointer-events: auto; }
+
+        .settings-panel {
+            background: #1a1e26; border: 1px solid #3a404c;
+            border-radius: 28px; padding: 26px 24px;
+            max-width: 420px; width: 100%;
+            box-shadow: 0 24px 60px #000000cc;
+            transform: translateY(20px); transition: 0.3s;
+        }
+        .settings-overlay.open .settings-panel { transform: translateY(0); }
+
+        .settings-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .settings-header h2 {
+            color: #e8f0ff; font-size: 1.15rem; font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .close-btn {
+            background: none; border: none; color: #7e8b9f;
+            font-size: 1.6rem; cursor: pointer; padding: 0 8px;
+            line-height: 1;
+        }
+        .close-btn:hover { color: #fff; }
+
+        .setting-row { margin-bottom: 20px; }
+        .setting-row label {
+            display: flex; justify-content: space-between; align-items: center;
+            color: #b7c9e0; font-size: 0.85rem; margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .setting-row label span.value {
+            color: #ffa640; font-weight: 700; font-variant-numeric: tabular-nums;
+        }
+        .setting-row input[type="range"] {
+            width: 100%; height: 6px; border-radius: 3px;
+            background: #2a3542; outline: none; -webkit-appearance: none;
+            cursor: pointer;
+        }
+        .setting-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 22px; height: 22px;
+            border-radius: 50%; background: #ffa640;
+            border: 2px solid #1a1e26;
+            box-shadow: 0 0 10px #ffa64080; cursor: pointer;
+        }
+        .setting-row input[type="range"]::-moz-range-thumb {
+            width: 22px; height: 22px; border-radius: 50%;
+            background: #ffa640; border: 2px solid #1a1e26;
+            box-shadow: 0 0 10px #ffa64080; cursor: pointer;
+        }
+
+        .preset-row {
+            display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+        }
+        .preset-btn {
+            flex: 1; min-width: 80px;
+            background: #0d1219; border: 1px solid #2a323f;
+            color: #b7c9e0; border-radius: 10px; padding: 10px 8px;
+            font-size: 0.75rem; font-weight: 600; cursor: pointer;
+            letter-spacing: 0.5px; transition: 0.15s;
+            box-shadow: none;
+        }
+        .preset-btn:hover { border-color: #ffa640; color: #ffa640; }
+        .preset-btn.active {
+            background: #ffa640; color: #1a1e26; border-color: #ffa640;
+            box-shadow: 0 0 14px #ffa64066;
+        }
+
+        .save-btn {
+            width: 100%; background: #ffa640; color: #1a1e26;
+            border: none; border-radius: 14px; padding: 14px;
+            font-size: 1rem; font-weight: 700; letter-spacing: 1px;
+            cursor: pointer; transition: 0.15s; box-shadow: none;
+            margin-top: 4px;
+        }
+        .save-btn:hover { background: #ffb95c; }
+
+        .settings-note {
+            color: #6b7f99; font-size: 0.7rem; text-align: center;
+            margin-top: 12px; line-height: 1.5;
+        }
 
         @media (max-width: 420px) {
             .speed-text { font-size: 3.6rem; }
-            button { padding: 12px 20px; font-size: 0.9rem; }
-            .rev-btn { padding: 14px 28px; }
+            button { padding: 12px 18px; font-size: 0.85rem; }
+            .rev-btn { padding: 14px 24px; }
+            .stat-value { font-size: 0.9rem; }
         }
     </style>
 </head>
 <body>
     <div class="dashboard">
+        <div class="top-bar">
+            <div class="app-title">E‑Bike Speedo</div>
+            <button class="gear-btn" id="gearBtn" title="Settings">⚙️</button>
+        </div>
+
         <div class="speedo-wrapper">
             <canvas id="speedoCanvas" width="800" height="800"></canvas>
             <div class="speed-text" id="speedDisplay">0</div>
             <div class="unit">km/h</div>
         </div>
+
         <div class="gps-status" id="gpsStatus">
-            <span class="dot" id="gpsDot"></span>
+            <span class="dot idle" id="gpsDot"></span>
             <span id="gpsMessage">GPS idle</span>
         </div>
+
+        <!-- Trip stats -->
+        <div class="stats-strip">
+            <div class="stat">
+                <div class="stat-label">Max</div>
+                <div class="stat-value" id="statMax">0 <small>km/h</small></div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Avg</div>
+                <div class="stat-value" id="statAvg">0 <small>km/h</small></div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Distance</div>
+                <div class="stat-value" id="statDist">0.00 <small>km</small></div>
+            </div>
+        </div>
+
         <div class="controls">
             <button id="startBtn" title="Start GPS tracking">▶ START</button>
             <button id="stopBtn" disabled title="Stop GPS">⏹ STOP</button>
             <button id="revBtn" class="rev-btn" title="Blip the throttle">🔊 REV</button>
         </div>
+
         <div class="sound-indicator" id="soundIndicator">
             <span class="sound-icon">🏍️</span>
             <span id="soundText">Big bike: OFF</span>
         </div>
-        <div class="calib">GAUGE MAX <span>60 km/h</span> · SOUND REDLINE <span>40 km/h</span></div>
-        <div class="footer-note">GPS speedometer · e-bike calibrated · REV to blip throttle</div>
+
+        <div class="footer-note">GPS speedometer · wake lock active · settings saved locally</div>
+    </div>
+
+    <!-- ===== SETTINGS OVERLAY ===== -->
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-panel">
+            <div class="settings-header">
+                <h2>⚙️ Calibration</h2>
+                <button class="close-btn" id="closeSettings">×</button>
+            </div>
+
+            <div class="preset-row">
+                <button class="preset-btn" data-preset="eu25">EU 25</button>
+                <button class="preset-btn" data-preset="us32">US 32</button>
+                <button class="preset-btn" data-preset="custom40">Custom 40</button>
+                <button class="preset-btn" data-preset="moto">Moto 180</button>
+            </div>
+
+            <div class="setting-row">
+                <label>Gauge max <span class="value" id="gaugeMaxVal">60 km/h</span></label>
+                <input type="range" id="gaugeMax" min="20" max="200" step="5" value="60">
+            </div>
+
+            <div class="setting-row">
+                <label>Sound redline <span class="value" id="soundMaxVal">40 km/h</span></label>
+                <input type="range" id="soundMax" min="10" max="200" step="5" value="40">
+            </div>
+
+            <div class="setting-row">
+                <label>Volume <span class="value" id="volumeVal">55%</span></label>
+                <input type="range" id="volume" min="0" max="100" step="5" value="55">
+            </div>
+
+            <button class="save-btn" id="saveSettings">SAVE &amp; APPLY</button>
+            <div class="settings-note">Settings persist locally. Gauge max should be ≥ your top speed.</div>
+        </div>
     </div>
 
     <script>
     (function() {
         // ============================================================
-        //  ★ CALIBRATION — TUNED FOR A 40 km/h E-BIKE ★
+        //  ★ DEFAULTS — overridden by localStorage ★
         // ============================================================
-        const MAX_GAUGE_SPEED = 60;    // gauge dial top (km/h) — 40 sits at 2/3
-        const MAX_SOUND_SPEED = 40;    // speed where engine hits redline / full roar
-        const MAX_GPS_SPEED   = 60;    // clamp readings above this (noise filter)
-        // ============================================================
+        const DEFAULTS = {
+            gaugeMax: 60,     // gauge dial top (km/h)
+            soundMax: 40,     // engine redline / full roar speed
+            volume: 0.55      // master volume 0..1
+        };
 
+        let settings = { ...DEFAULTS };
+
+        function loadSettings() {
+            try {
+                const raw = localStorage.getItem('ebike-speedo-settings');
+                if (raw) {
+                    const saved = JSON.parse(raw);
+                    settings = {
+                        gaugeMax: clamp(Number(saved.gaugeMax) || DEFAULTS.gaugeMax, 20, 200),
+                        soundMax: clamp(Number(saved.soundMax) || DEFAULTS.soundMax, 10, 200),
+                        volume: clamp(Number(saved.volume) || DEFAULTS.volume, 0, 1)
+                    };
+                }
+            } catch(e) {}
+        }
+
+        function saveSettings() {
+            try {
+                localStorage.setItem('ebike-speedo-settings', JSON.stringify(settings));
+            } catch(e) {}
+        }
+
+        // ===== DOM =====
         const canvas = document.getElementById('speedoCanvas');
         const ctx = canvas.getContext('2d');
         const speedDisplay = document.getElementById('speedDisplay');
+        const gpsStatus = document.getElementById('gpsStatus');
         const gpsDot = document.getElementById('gpsDot');
         const gpsMessage = document.getElementById('gpsMessage');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const revBtn = document.getElementById('revBtn');
         const soundText = document.getElementById('soundText');
+        const gearBtn = document.getElementById('gearBtn');
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const closeSettingsBtn = document.getElementById('closeSettings');
+        const saveSettingsBtn = document.getElementById('saveSettings');
+        const gaugeMaxInput = document.getElementById('gaugeMax');
+        const soundMaxInput = document.getElementById('soundMax');
+        const volumeInput = document.getElementById('volume');
+        const gaugeMaxVal = document.getElementById('gaugeMaxVal');
+        const soundMaxVal = document.getElementById('soundMaxVal');
+        const volumeVal = document.getElementById('volumeVal');
+        const statMax = document.getElementById('statMax');
+        const statAvg = document.getElementById('statAvg');
+        const statDist = document.getElementById('statDist');
+
         const SIZE = 800;
         canvas.width = SIZE;
         canvas.height = SIZE;
 
+        // ===== STATE =====
         let currentSpeed = 0;
         let targetSpeed = 0;
         let animationFrame = null;
@@ -155,10 +386,37 @@
         let lastPosition = null;
         let lastUpdateTime = 0;
 
+        // Trip stats
+        let tripMax = 0;
+        let tripDistance = 0; // km
+        let tripStartTime = 0;
+        let movingTime = 0;   // seconds
+        let lastMoveTimestamp = 0;
+
         let revEnergy = 0;
         let isRevving = false;
 
+        // Wake lock
+        let wakeLock = null;
+
         const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+        // ===== WAKE LOCK =====
+        async function requestWakeLock() {
+            if (!('wakeLock' in navigator)) return;
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLock.addEventListener('release', () => { wakeLock = null; });
+            } catch (e) {
+                console.warn('Wake Lock failed:', e);
+            }
+        }
+        async function releaseWakeLock() {
+            if (wakeLock) {
+                try { await wakeLock.release(); } catch(e) {}
+                wakeLock = null;
+            }
+        }
 
         // ===== AUDIO =====
         let audioCtx = null;
@@ -193,81 +451,46 @@
                 engineBus.gain.value = 0.9;
                 engineBus.connect(filterNode);
 
-                // Layer 1: fundamental saw
                 const osc1 = audioCtx.createOscillator();
-                osc1.type = 'sawtooth';
-                osc1.frequency.value = 55;
-                const g1 = audioCtx.createGain();
-                g1.gain.value = 0.5;
+                osc1.type = 'sawtooth'; osc1.frequency.value = 55;
+                const g1 = audioCtx.createGain(); g1.gain.value = 0.5;
                 osc1.connect(g1); g1.connect(engineBus); osc1.start();
                 oscillators.push({ osc: osc1, baseFreq: 55 });
 
-                // Layer 2: sub-octave sine (thump)
                 const osc2 = audioCtx.createOscillator();
-                osc2.type = 'sine';
-                osc2.frequency.value = 27.5;
-                const g2 = audioCtx.createGain();
-                g2.gain.value = 0.7;
+                osc2.type = 'sine'; osc2.frequency.value = 27.5;
+                const g2 = audioCtx.createGain(); g2.gain.value = 0.7;
                 osc2.connect(g2); g2.connect(engineBus); osc2.start();
                 oscillators.push({ osc: osc2, baseFreq: 27.5 });
 
-                // Layer 3: second harmonic (growl)
                 const osc3 = audioCtx.createOscillator();
-                osc3.type = 'sawtooth';
-                osc3.frequency.value = 110;
-                const g3 = audioCtx.createGain();
-                g3.gain.value = 0.18;
+                osc3.type = 'sawtooth'; osc3.frequency.value = 110;
+                const g3 = audioCtx.createGain(); g3.gain.value = 0.18;
                 osc3.connect(g3); g3.connect(engineBus); osc3.start();
                 oscillators.push({ osc: osc3, baseFreq: 110 });
 
-                // Layer 4: detuned saw (beating)
                 const osc4 = audioCtx.createOscillator();
-                osc4.type = 'sawtooth';
-                osc4.frequency.value = 55;
-                osc4.detune.value = 12;
-                const g4 = audioCtx.createGain();
-                g4.gain.value = 0.22;
+                osc4.type = 'sawtooth'; osc4.frequency.value = 55; osc4.detune.value = 12;
+                const g4 = audioCtx.createGain(); g4.gain.value = 0.22;
                 osc4.connect(g4); g4.connect(engineBus); osc4.start();
                 oscillators.push({ osc: osc4, baseFreq: 55 });
 
-                // Layer 5: exhaust rasp (noise)
                 const bufferSize = 2 * audioCtx.sampleRate;
                 const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                 const data = noiseBuffer.getChannelData(0);
                 for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
                 noiseSource = audioCtx.createBufferSource();
-                noiseSource.buffer = noiseBuffer;
-                noiseSource.loop = true;
-
+                noiseSource.buffer = noiseBuffer; noiseSource.loop = true;
                 noiseFilter = audioCtx.createBiquadFilter();
-                noiseFilter.type = 'bandpass';
-                noiseFilter.frequency.value = 180;
-                noiseFilter.Q.value = 0.7;
-
-                noiseGain = audioCtx.createGain();
-                noiseGain.gain.value = 0.18;
-
-                noiseSource.connect(noiseFilter);
-                noiseFilter.connect(noiseGain);
-                noiseGain.connect(engineBus);
+                noiseFilter.type = 'bandpass'; noiseFilter.frequency.value = 180; noiseFilter.Q.value = 0.7;
+                noiseGain = audioCtx.createGain(); noiseGain.gain.value = 0.18;
+                noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(engineBus);
                 noiseSource.start();
 
-                // LFO for V-twin lope
-                lfo = audioCtx.createOscillator();
-                lfo.type = 'sine';
-                lfo.frequency.value = 7;
-
-                lfoGain = audioCtx.createGain();
-                lfoGain.gain.value = 0.35;
-
-                lfoGainTarget = audioCtx.createGain();
-                lfoGainTarget.gain.value = 0.65;
-
-                lfo.connect(lfoGain);
-                lfoGain.connect(lfoGainTarget.gain);
-                lfo.start();
-
+                lfo = audioCtx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 7;
+                lfoGain = audioCtx.createGain(); lfoGain.gain.value = 0.35;
+                lfoGainTarget = audioCtx.createGain(); lfoGainTarget.gain.value = 0.65;
+                lfo.connect(lfoGain); lfoGain.connect(lfoGainTarget.gain); lfo.start();
                 engineBus.disconnect();
                 engineBus.connect(lfoGainTarget);
                 lfoGainTarget.connect(filterNode);
@@ -285,46 +508,37 @@
             }
             isRevving = true;
             revBtn.classList.add('revving');
+            if (navigator.vibrate) navigator.vibrate(10);
         }
         function stopRev() {
             isRevving = false;
             revBtn.classList.remove('revving');
         }
 
-        // ===== SOUND (calibrated to 40 km/h redline) =====
         function updateBigBikeSound(speedKmh) {
             if (!audioCtx || !isAudioReady) return;
             if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
 
             const now = audioCtx.currentTime;
-
             if (isRevving) revEnergy = Math.min(1, revEnergy + 0.08);
             else { revEnergy *= 0.94; if (revEnergy < 0.005) revEnergy = 0; }
 
-            // ★ Speed normalized against 40 km/h (not 120) ★
-            const speedNorm = clamp(speedKmh / MAX_SOUND_SPEED, 0, 1);
+            const speedNorm = clamp(speedKmh / settings.soundMax, 0, 1);
             const load = clamp(speedNorm + revEnergy * 0.9, 0, 1);
 
-            // Volume
             const idlePresence = 0.07;
             const volume = idlePresence + (1 - idlePresence) * Math.pow(load, 0.8);
-            masterGain.gain.setTargetAtTime(volume * 0.55, now, 0.06);
+            masterGain.gain.setTargetAtTime(volume * settings.volume, now, 0.06);
 
-            // Pitch: 1x idle → 3x at 40 km/h, extra kick from rev
             const revFactor = 1 + load * 2.0 + revEnergy * 0.8;
             oscillators.forEach(o => {
                 o.osc.frequency.setTargetAtTime(o.baseFreq * revFactor, now, 0.04);
             });
 
-            // Filter opens with load
-            const cutoff = 350 + load * 2600 + revEnergy * 800;
-            filterNode.frequency.setTargetAtTime(cutoff, now, 0.05);
-
-            // Exhaust rasp
+            filterNode.frequency.setTargetAtTime(350 + load * 2600 + revEnergy * 800, now, 0.05);
             noiseGain.gain.setTargetAtTime(0.08 + load * 0.22 + revEnergy * 0.1, now, 0.06);
             noiseFilter.frequency.setTargetAtTime(140 + load * 900 + revEnergy * 400, now, 0.06);
 
-            // LFO lope
             lfo.frequency.setTargetAtTime(7 + load * 18 + revEnergy * 10, now, 0.08);
             lfoGain.gain.setTargetAtTime(0.35 * (1 - load * 0.7), now, 0.08);
 
@@ -341,7 +555,7 @@
             soundText.innerText = 'Big bike: OFF';
         }
 
-        // ===== GAUGE (max 60 km/h) =====
+        // ===== GAUGE =====
         function drawSpeedometer(speed) {
             const w = canvas.width, h = canvas.height;
             const centerX = w / 2, centerY = h / 2, radius = w * 0.42;
@@ -365,17 +579,22 @@
             const startAngle = Math.PI * 0.75;
             const endAngle = Math.PI * 2.25;
             const angleRange = endAngle - startAngle;
+            const maxSpeed = settings.gaugeMax;
 
-            // ★ Ticks now use MAX_GAUGE_SPEED = 60 ★
-            const majorStep = 10;                 // 10, 20, 30, 40, 50, 60
-            const totalMajor = MAX_GAUGE_SPEED / majorStep;
-            const minorStep = 2;                  // small ticks every 2 km/h
-            const totalMinor = MAX_GAUGE_SPEED / minorStep;
+            // Choose tick step based on range
+            let majorStep = 10;
+            if (maxSpeed <= 30) majorStep = 5;
+            else if (maxSpeed <= 60) majorStep = 10;
+            else if (maxSpeed <= 120) majorStep = 20;
+            else majorStep = 20;
+            const minorStep = majorStep / 5;
+            const totalMajor = Math.floor(maxSpeed / majorStep);
+            const totalMinor = Math.floor(maxSpeed / minorStep);
 
             for (let i = 0; i <= totalMinor; i++) {
                 const value = i * minorStep;
-                if (value > MAX_GAUGE_SPEED) continue;
-                const angle = startAngle + (value / MAX_GAUGE_SPEED) * angleRange;
+                if (value > maxSpeed) continue;
+                const angle = startAngle + (value / maxSpeed) * angleRange;
                 const innerR = radius * 0.82, outerR = radius * 0.9;
                 const x1 = centerX + Math.cos(angle) * innerR;
                 const y1 = centerY + Math.sin(angle) * innerR;
@@ -383,42 +602,37 @@
                 const y2 = centerY + Math.sin(angle) * outerR;
                 ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
                 ctx.strokeStyle = '#5d7b9e';
-                ctx.lineWidth = (i % 5 === 0) ? 2 : 1;   // every 10 km/h thicker
+                ctx.lineWidth = (i % 5 === 0) ? 2 : 1;
                 ctx.stroke();
             }
-
             for (let i = 0; i <= totalMajor; i++) {
                 const value = i * majorStep;
-                if (value > MAX_GAUGE_SPEED) continue;
-                const angle = startAngle + (value / MAX_GAUGE_SPEED) * angleRange;
+                if (value > maxSpeed) continue;
+                const angle = startAngle + (value / maxSpeed) * angleRange;
                 const innerR = radius * 0.75, outerR = radius * 0.92;
                 const x1 = centerX + Math.cos(angle) * innerR;
                 const y1 = centerY + Math.sin(angle) * innerR;
                 const x2 = centerX + Math.cos(angle) * outerR;
                 const y2 = centerY + Math.sin(angle) * outerR;
                 ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
-
-                // ★ Red zone starts at 40 km/h (your e-bike max) ★
-                ctx.strokeStyle = (value >= MAX_SOUND_SPEED) ? '#ff5544' : '#b8d0ee';
+                ctx.strokeStyle = (value >= settings.soundMax) ? '#ff5544' : '#b8d0ee';
                 ctx.lineWidth = 4;
                 ctx.stroke();
 
                 const labelR = radius * 0.6;
                 const lx = centerX + Math.cos(angle) * labelR;
                 const ly = centerY + Math.sin(angle) * labelR;
-                ctx.font = 'bold 32px "Segoe UI", Roboto, sans-serif';
-                ctx.fillStyle = (value >= MAX_SOUND_SPEED) ? '#ff8877' : '#d0e2ff';
+                ctx.font = 'bold 30px "Segoe UI", Roboto, sans-serif';
+                ctx.fillStyle = (value >= settings.soundMax) ? '#ff8877' : '#d0e2ff';
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.shadowColor = (value >= MAX_SOUND_SPEED) ? '#ff3300' : '#1e90ff';
+                ctx.shadowColor = (value >= settings.soundMax) ? '#ff3300' : '#1e90ff';
                 ctx.shadowBlur = 8;
                 ctx.fillText(value, lx, ly);
                 ctx.shadowBlur = 0;
             }
 
-            // needle — normalized to MAX_GAUGE_SPEED (60)
-            const speedRatio = clamp(speed / MAX_GAUGE_SPEED, 0, 1);
+            const speedRatio = clamp(speed / maxSpeed, 0, 1);
             const needleAngle = startAngle + speedRatio * angleRange;
-
             ctx.shadowColor = '#1e90ff'; ctx.shadowBlur = 22;
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
@@ -441,17 +655,36 @@
             ctx.strokeStyle = '#aaccff'; ctx.lineWidth = 4; ctx.stroke();
             ctx.shadowBlur = 0;
 
-            // small "40 MAX" marker ring at your e-bike limit
-            const maxAngle = startAngle + (MAX_SOUND_SPEED / MAX_GAUGE_SPEED) * angleRange;
-            const mr = radius * 0.68;
-            const mx = centerX + Math.cos(maxAngle) * mr;
-            const my = centerY + Math.sin(maxAngle) * mr;
-            ctx.beginPath();
-            ctx.arc(mx, my, 5, 0, Math.PI * 2);
-            ctx.fillStyle = '#ff7755';
-            ctx.shadowColor = '#ff3300'; ctx.shadowBlur = 12;
-            ctx.fill();
-            ctx.shadowBlur = 0;
+            // red zone dot at sound redline
+            if (settings.soundMax <= maxSpeed) {
+                const maxAngle = startAngle + (settings.soundMax / maxSpeed) * angleRange;
+                const mr = radius * 0.68;
+                const mx = centerX + Math.cos(maxAngle) * mr;
+                const my = centerY + Math.sin(maxAngle) * mr;
+                ctx.beginPath();
+                ctx.arc(mx, my, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#ff7755';
+                ctx.shadowColor = '#ff3300'; ctx.shadowBlur = 12;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // ===== STATS UI =====
+        function updateStatsUI() {
+            statMax.innerHTML = Math.round(tripMax) + ' <small>km/h</small>';
+            const avg = movingTime > 0 ? (tripDistance / (movingTime / 3600)) : 0;
+            statAvg.innerHTML = Math.round(avg) + ' <small>km/h</small>';
+            statDist.innerHTML = tripDistance.toFixed(2) + ' <small>km</small>';
+        }
+
+        function resetTrip() {
+            tripMax = 0;
+            tripDistance = 0;
+            tripStartTime = performance.now();
+            movingTime = 0;
+            lastMoveTimestamp = 0;
+            updateStatsUI();
         }
 
         function animate() {
@@ -466,10 +699,12 @@
             animationFrame = requestAnimationFrame(animate);
         }
 
+        // ===== GPS =====
         function handlePosition(position) {
             if (!isTracking) return;
             const { speed, coords } = position;
             let speedKmh = 0;
+
             if (speed !== null && speed !== undefined && !isNaN(speed)) {
                 speedKmh = speed * 3.6;
             } else if (lastPosition) {
@@ -487,16 +722,61 @@
                 const timeDiff = (performance.now() - lastUpdateTime) / 1000;
                 if (timeDiff > 0.3 && distance > 1) speedKmh = (distance / timeDiff) * 3.6;
             }
-            speedKmh = clamp(speedKmh, 0, MAX_GPS_SPEED);
+
+            speedKmh = clamp(speedKmh, 0, Math.max(settings.gaugeMax, 100));
             targetSpeed = speedKmh;
+
+            // Update stats
+            if (speedKmh > tripMax) tripMax = speedKmh;
+
+            // Distance: integrate from GPS
+            if (lastPosition) {
+                const lat1 = lastPosition.coords.latitude;
+                const lon1 = lastPosition.coords.longitude;
+                const lat2 = coords.latitude;
+                const lon2 = coords.longitude;
+                const R = 6371e3;
+                const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+                const Δφ = (lat2 - lat1) * Math.PI / 180;
+                const Δλ = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const distanceKm = (R * c) / 1000;
+                // Only count reasonable deltas (< 0.5 km) to filter GPS glitches
+                if (distanceKm < 0.5) tripDistance += distanceKm;
+            }
+
+            // Moving time
+            const nowMs = performance.now();
+            if (speedKmh > 1) {
+                if (lastMoveTimestamp > 0) {
+                    movingTime += (nowMs - lastMoveTimestamp) / 1000;
+                }
+                lastMoveTimestamp = nowMs;
+            } else {
+                lastMoveTimestamp = 0;
+            }
+            updateStatsUI();
+
             lastPosition = position;
             lastUpdateTime = performance.now();
-            gpsDot.className = 'dot';
-            gpsMessage.textContent = `GPS active · ${coords.accuracy ? '±' + Math.round(coords.accuracy) + 'm' : 'signal ok'}`;
+
+            // ★ GPS accuracy color coding ★
+            const acc = coords.accuracy; // meters
+            let level = 'good', label = 'GPS good';
+            if (acc == null) { level = 'warn'; label = 'GPS ?'; }
+            else if (acc <= 10) { level = 'good'; label = `GPS good · ±${Math.round(acc)}m`; }
+            else if (acc <= 30) { level = 'warn'; label = `GPS fair · ±${Math.round(acc)}m`; }
+            else { level = 'bad'; label = `GPS weak · ±${Math.round(acc)}m`; }
+
+            gpsDot.className = 'dot ' + level;
+            gpsStatus.className = 'gps-status ' + level;
+            gpsMessage.textContent = label;
         }
 
         function handleGpsError(err) {
-            gpsDot.className = 'dot inactive';
+            gpsDot.className = 'dot bad';
+            gpsStatus.className = 'gps-status bad';
             let msg = 'GPS error';
             if (err.code === 1) msg = 'Permission denied';
             else if (err.code === 2) msg = 'Position unavailable';
@@ -508,7 +788,7 @@
             if (isTracking) return;
             if (!navigator.geolocation) {
                 gpsMessage.textContent = 'Geolocation not supported';
-                gpsDot.className = 'dot inactive';
+                gpsDot.className = 'dot bad';
                 return;
             }
             initAudio();
@@ -517,9 +797,14 @@
             isTracking = true;
             startBtn.disabled = true;
             stopBtn.disabled = false;
-            gpsDot.className = 'dot';
+            gpsDot.className = 'dot warn';
+            gpsStatus.className = 'gps-status warn';
             gpsMessage.textContent = 'Requesting GPS...';
             targetSpeed = 0; currentSpeed = 0;
+            lastPosition = null;
+            resetTrip();
+
+            requestWakeLock();
 
             watchId = navigator.geolocation.watchPosition(
                 handlePosition, handleGpsError,
@@ -536,14 +821,95 @@
             startBtn.disabled = false;
             stopBtn.disabled = true;
             targetSpeed = 0; currentSpeed = 0;
-            gpsDot.className = 'dot inactive';
+            gpsDot.className = 'dot idle';
+            gpsStatus.className = 'gps-status';
             gpsMessage.textContent = 'GPS stopped';
             stopAudio();
+            releaseWakeLock();
         }
 
+        // ===== SETTINGS UI =====
+        function openSettings() {
+            // Load current values into inputs
+            gaugeMaxInput.value = settings.gaugeMax;
+            soundMaxInput.value = settings.soundMax;
+            volumeInput.value = Math.round(settings.volume * 100);
+            refreshSettingsLabels();
+            highlightActivePreset();
+            settingsOverlay.classList.add('open');
+        }
+
+        function closeSettings() {
+            settingsOverlay.classList.remove('open');
+        }
+
+        function refreshSettingsLabels() {
+            gaugeMaxVal.textContent = gaugeMaxInput.value + ' km/h';
+            soundMaxVal.textContent = soundMaxInput.value + ' km/h';
+            volumeVal.textContent = volumeInput.value + '%';
+        }
+
+        function highlightActivePreset() {
+            const gm = Number(gaugeMaxInput.value);
+            const sm = Number(soundMaxInput.value);
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                const preset = btn.dataset.preset;
+                let active = false;
+                if (preset === 'eu25')  active = (gm === 30 && sm === 25);
+                if (preset === 'us32')  active = (gm === 45 && sm === 32);
+                if (preset === 'custom40') active = (gm === 60 && sm === 40);
+                if (preset === 'moto')  active = (gm === 200 && sm === 180);
+                btn.classList.toggle('active', active);
+            });
+        }
+
+        function applyPreset(name) {
+            const presets = {
+                eu25:    { gaugeMax: 30,  soundMax: 25 },
+                us32:    { gaugeMax: 45,  soundMax: 32 },
+                custom40:{ gaugeMax: 60,  soundMax: 40 },
+                moto:    { gaugeMax: 200, soundMax: 180 }
+            };
+            const p = presets[name];
+            if (p) {
+                gaugeMaxInput.value = p.gaugeMax;
+                soundMaxInput.value = p.soundMax;
+                refreshSettingsLabels();
+                highlightActivePreset();
+            }
+        }
+
+        function applySettingsFromInputs() {
+            const newGauge = clamp(Number(gaugeMaxInput.value), 20, 200);
+            let newSound = clamp(Number(soundMaxInput.value), 10, 200);
+            // Make sure soundMax <= gaugeMax for sensible display
+            if (newSound > newGauge) newSound = newGauge;
+            const newVolume = clamp(Number(volumeInput.value) / 100, 0, 1);
+
+            settings.gaugeMax = newGauge;
+            settings.soundMax = newSound;
+            settings.volume = newVolume;
+
+            saveSettings();
+
+            // Reapply volume immediately
+            if (audioCtx && masterGain) {
+                masterGain.gain.setTargetAtTime(
+                    (revEnergy > 0.02 || currentSpeed > 1 ? settings.volume * 0.55 : 0),
+                    audioCtx.currentTime, 0.1
+                );
+            }
+            closeSettings();
+        }
+
+        // ===== INIT =====
         function init() {
+            loadSettings();
+
             drawSpeedometer(0);
             animate();
+            updateStatsUI();
+
             startBtn.addEventListener('click', startTracking);
             stopBtn.addEventListener('click', stopTracking);
 
@@ -553,22 +919,42 @@
             revBtn.addEventListener('pointercancel', stopRev);
 
             window.addEventListener('keydown', (e) => {
-                if (e.code === 'Space' && !e.repeat) { e.preventDefault(); startRev(); }
+                if (e.code === 'Space' && !e.repeat && !settingsOverlay.classList.contains('open')) {
+                    e.preventDefault(); startRev();
+                }
             });
             window.addEventListener('keyup', (e) => {
                 if (e.code === 'Space') { e.preventDefault(); stopRev(); }
             });
 
-            window.addEventListener('beforeunload', () => {
-                if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-                if (audioCtx) audioCtx.close().catch(() => {});
+            // Settings
+            gearBtn.addEventListener('click', openSettings);
+            closeSettingsBtn.addEventListener('click', closeSettings);
+            saveSettingsBtn.addEventListener('click', applySettingsFromInputs);
+            settingsOverlay.addEventListener('click', (e) => {
+                if (e.target === settingsOverlay) closeSettings();
             });
-            document.addEventListener('visibilitychange', () => {
+            gaugeMaxInput.addEventListener('input', () => { refreshSettingsLabels(); highlightActivePreset(); });
+            soundMaxInput.addEventListener('input', () => { refreshSettingsLabels(); highlightActivePreset(); });
+            volumeInput.addEventListener('input', refreshSettingsLabels);
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+            });
+
+            // Wake lock re-acquire on visibility return
+            document.addEventListener('visibilitychange', async () => {
                 if (document.hidden) {
                     if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(() => {});
                 } else {
                     if (audioCtx && audioCtx.state === 'suspended' && isTracking) audioCtx.resume().catch(() => {});
+                    if (isTracking && !wakeLock) requestWakeLock();
                 }
+            });
+
+            window.addEventListener('beforeunload', () => {
+                if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+                if (audioCtx) audioCtx.close().catch(() => {});
+                releaseWakeLock();
             });
         }
         init();
